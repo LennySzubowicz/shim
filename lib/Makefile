@@ -1,16 +1,15 @@
-TARGET = lib.a
+LIB_SOURCES = $(foreach x,$(wildcard $(TOPDIR)/lib/*.c),$(subst $(TOPDIR)/,,$(x)))
+LIB_OBJECTS = $(foreach x,$(LIB_SOURCES),$(patsubst %.c,%.efi.o,$(x)))
 
-LIBFILES = simple_file.o guid.o console.o execute.o configtable.o shell.o variables.o security_policy.o
+$(foreach x,$(LIB_SOURCES),$(eval vpath $(x) $(TOPDIR)))
+$(foreach x,$(LIB_OBJECTS),$(eval vpath $(x) $(BUILDDIR)))
+$(foreach x,$(LIB_SOURCES),$(eval $(call object-template,lib/,$(x),$$(CRYPTLIB_INCLUDES))))
 
-EFI_INCLUDES    = -I$(EFI_INCLUDE) -I$(EFI_INCLUDE)/$(ARCH) -I$(EFI_INCLUDE)/protocol -I$(TOPDIR)/../include \
-		  -I$(TOPDIR)/CryptLib/Include/openssl/
+clean-lib-objs :
+	@rm -rf $(BUILDDIR)/lib
 
-lib.a: $(LIBFILES)
-	$(AR) rcs lib.a $(LIBFILES)
+clean : | clean-lib-objs
 
-all: $(TARGET)
-
-clean:
-	rm -f lib.a
-	rm -f $(LIBFILES)
-
+vpath lib.efi.a $(BUILDDIR)/lib
+lib.efi.a : $(LIB_OBJECTS)
+	$(AR) rcsD $@ $^
